@@ -41,7 +41,7 @@ app.post('/auth/login' , async (req,res) => {  //lets an existing user log in.
   const {email,password} = req.body
   const db = req.app.get('db')
   const foundUser = await db.check_user_exists(email)
-  if(foundUser[0]) return res.status(409).send('Incorrect Email')
+  if(!foundUser[0]) return res.status(409).send('Incorrect Email')
   const authenticated = bcrypt.compareSync(password,foundUser[0].user_password)
   if(authenticated){
     req.session.user = {id: foundUser[0].id,email: foundUser[0].email}
@@ -50,6 +50,19 @@ app.post('/auth/login' , async (req,res) => {  //lets an existing user log in.
     res.status(401).send('Incorrect Email or password')  // don't say just one or the other, that would give a potential hacker a clue what they need to do next.
   }
 })
+
+app.get('/auth/logout' , (req,res) => {
+  req.session.destroy()
+  res.sendStatus(200)
+})
+
+app.get('/auth/user'), (req,res) => {
+  if(req.session.user){
+    res.status(200).send(req.session.user)
+  } else {
+    res.status(401).send('Please log in')
+  }
+}
 
 app.listen(SERVER_PORT, () => {
   console.log(`Listening on port: ${SERVER_PORT}`);
